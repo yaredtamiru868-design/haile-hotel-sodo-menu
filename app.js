@@ -1,1 +1,41 @@
-const KEY="haileMenuV1",seed=[{"id": 1, "name": "Chicken Sandwich", "category": "Sandwich", "price": 400, "description": "Chicken sandwich prepared with fresh ingredients.", "ingredients": ["Chicken", "Bread", "Lettuce", "Tomato"], "nutrition": {"calories": "\u2014", "protein": "\u2014", "carbs": "\u2014", "fat": "\u2014", "fiber": "\u2014"}, "image": "chicken"}, {"id": 2, "name": "Chicken Club Sandwich", "category": "Sandwich", "price": 625, "description": "A generous chicken club sandwich.", "ingredients": ["Chicken", "Bread", "Lettuce", "Tomato", "Cheese"], "nutrition": {"calories": "\u2014", "protein": "\u2014", "carbs": "\u2014", "fat": "\u2014", "fiber": "\u2014"}, "image": "chicken"}, {"id": 3, "name": "Beef Steak Sandwich", "category": "Sandwich", "price": 450, "description": "Beef steak served in a sandwich.", "ingredients": ["Beef", "Bread", "Lettuce", "Tomato"], "nutrition": {"calories": "\u2014", "protein": "\u2014", "carbs": "\u2014", "fat": "\u2014", "fiber": "\u2014"}, "image": "beef"}, {"id": 4, "name": "Lasagna", "category": "Dinner", "price": 625, "description": "Classic layered lasagna.", "ingredients": ["Pasta", "Beef", "Tomato sauce", "Cheese"], "nutrition": {"calories": "\u2014", "protein": "\u2014", "carbs": "\u2014", "fat": "\u2014", "fiber": "\u2014"}, "image": "pasta"}, {"id": 5, "name": "Chicken Rice Bowl", "category": "Dinner", "price": 625, "description": "Chicken served with rice and vegetables.", "ingredients": ["Chicken", "Rice", "Vegetables"], "nutrition": {"calories": "\u2014", "protein": "\u2014", "carbs": "\u2014", "fat": "\u2014", "fiber": "\u2014"}, "image": "rice"}, {"id": 6, "name": "Fish & Chips", "category": "Dinner", "price": 625, "description": "Crispy fish served with French fries.", "ingredients": ["Fish", "Potatoes", "Flour", "Oil"], "nutrition": {"calories": "\u2014", "protein": "\u2014", "carbs": "\u2014", "fat": "\u2014", "fiber": "\u2014"}, "image": "fish"}, {"id": 7, "name": "Chicken Quesadilla", "category": "Wrap", "price": 500, "description": "Grilled chicken and cheese in a toasted tortilla.", "ingredients": ["Chicken", "Tortilla", "Cheese", "Peppers"], "nutrition": {"calories": "\u2014", "protein": "\u2014", "carbs": "\u2014", "fat": "\u2014", "fiber": "\u2014"}, "image": "wrap"}, {"id": 8, "name": "Lemon Mint", "category": "Salad", "price": 400, "description": "Fresh lemon and mint drink.", "ingredients": ["Lemon", "Mint", "Water"], "nutrition": {"calories": "\u2014", "protein": "\u2014", "carbs": "\u2014", "fat": "\u2014", "fiber": "\u2014"}, "image": "drink"}, {"id": 9, "name": "Chocolate Cake", "category": "Soft Cakes", "price": 312.5, "description": "Rich chocolate cake.", "ingredients": ["Flour", "Cocoa", "Eggs", "Butter", "Sugar"], "nutrition": {"calories": "\u2014", "protein": "\u2014", "carbs": "\u2014", "fat": "\u2014", "fiber": "\u2014"}, "image": "cake"}, {"id": 10, "name": "Pancake", "category": "Breakfast", "price": 375, "description": "Fresh pancakes served for breakfast.", "ingredients": ["Flour", "Eggs", "Milk", "Sugar"], "nutrition": {"calories": "\u2014", "protein": "\u2014", "carbs": "\u2014", "fat": "\u2014", "fiber": "\u2014"}, "image": "pancake"}, {"id": 11, "name": "Espresso", "category": "Coffee", "price": 90, "description": "Classic espresso coffee.", "ingredients": ["Coffee"], "nutrition": {"calories": "\u2014", "protein": "\u2014", "carbs": "\u2014", "fat": "\u2014", "fiber": "\u2014"}, "image": "coffee"}, {"id": 12, "name": "Iced Latte", "category": "Cold Coffee", "price": 200, "description": "Chilled espresso with milk.", "ingredients": ["Espresso", "Milk", "Ice"], "nutrition": {"calories": "\u2014", "protein": "\u2014", "carbs": "\u2014", "fat": "\u2014", "fiber": "\u2014"}, "image": "coffee"}];let data=JSON.parse(localStorage.getItem(KEY)||"null")||seed,active="All";localStorage.setItem(KEY,JSON.stringify(data));const $=x=>document.getElementById(x);function cats(){return["All",...new Set(data.map(x=>x.category))]}function render(){let q=$("search").value.toLowerCase();$("cats").innerHTML=cats().map(c=>`<button class="${c==active?"on":""}" onclick="active=${JSON.stringify(c)};render()">${c}</button>`).join("");let a=data.filter(x=>(active=="All"||x.category==active)&&(x.name+" "+x.category).toLowerCase().includes(q));$("grid").innerHTML=a.map(x=>`<article onclick="openFood(${x.id})"><div class="photo ${x.image}"></div><div><small>${x.category}</small><h3>${x.name}</h3><b>${x.price.toLocaleString()} ETB</b><p>${x.description}</p><footer>${x.nutrition.protein} Protein · ${x.nutrition.carbs} Carbs · ${x.nutrition.calories}</footer></div></article>`).join("")||"<p>No food found.</p>"}function openFood(id){let x=data.find(y=>y.id==id);$("mimg").className="photo "+x.image;$("mcat").textContent=x.category;$("mn").textContent=x.name;$("mp").textContent=x.price.toLocaleString()+" ETB";$("md").textContent=x.description;$("mi").innerHTML=x.ingredients.map(i=>`<span>${i}</span>`).join("");$("mt").innerHTML=Object.entries(x.nutrition).map(i=>`<span><b>${i[1]}</b><small>${i[0]}</small></span>`).join("");$("modal").classList.add("show")}$("close").onclick=()=>$("modal").classList.remove("show");$("search").oninput=render;render();
+const db = window.db;
+let data = [], active = "All";
+const $ = id => document.getElementById(id);
+
+function categories(){ return ["All", ...new Set(data.map(x=>x.category).filter(Boolean))]; }
+function setCategory(c){ active=c; render(); }
+
+async function loadMenu(){
+  const {data: rows, error} = await db.from("menu_items").select("*").eq("available", true).order("created_at",{ascending:false});
+  if(error){ console.error(error); if($("grid")) $("grid").innerHTML="<p>Menu could not be loaded. Please try again.</p>"; return; }
+  data = (rows||[]).map(x=>({
+    ...x,
+    price:Number(x.price||0),
+    image:x.image_url||"chicken",
+    nutrition:{calories:x.calories??"—",protein:x.protein??"—",carbs:x.carbohydrates??"—",fat:x.fat??"—",fiber:x.fiber??"—",vitamins:x.vitamins||"—"}
+  }));
+  render();
+}
+function render(){
+  const q=(($("search")?.value)||"").toLowerCase().trim();
+  if($("cats")) $("cats").innerHTML=categories().map(c=>`<button class="${c===active?"on":""}" onclick="setCategory(${JSON.stringify(c)})">${c}</button>`).join("");
+  const list=data.filter(x=>(active==="All"||x.category===active)&&(`${x.name} ${x.category} ${x.description||""}`).toLowerCase().includes(q));
+  if($("grid")) $("grid").innerHTML=list.map(x=>`
+    <article class="food" onclick="openFood('${x.id}')">
+      <div class="photo ${x.image||"chicken"}"></div>
+      <div><small>${x.category||""}</small><h3>${x.name}</h3><b>${Number(x.price||0).toLocaleString()} ETB</b><p>${x.description||""}</p><footer>${x.nutrition.protein||"—"} Protein · ${x.nutrition.carbs||"—"} Carbs</footer></div>
+    </article>`).join("")||"<p>No food found.</p>";
+}
+function openFood(id){
+  const x=data.find(y=>y.id===id); if(!x)return;
+  $("mimg").className="photo "+(x.image||"chicken"); $("mcat").textContent=x.category||""; $("mn").textContent=x.name||"";
+  $("mp").textContent=Number(x.price||0).toLocaleString()+" ETB"; $("md").textContent=x.description||"";
+  $("mi").innerHTML=(Array.isArray(x.ingredients)?x.ingredients:[]).map(i=>`<span>${i}</span>`).join("");
+  const n=x.nutrition||{}; $("mt").innerHTML=`<span><b>${n.calories||"—"}</b><small>Calories</small></span><span><b>${n.protein||"—"}</b><small>Protein</small></span><span><b>${n.carbs||"—"}</b><small>Carbohydrates</small></span><span><b>${n.fat||"—"}</b><small>Fat</small></span><span><b>${n.fiber||"—"}</b><small>Fiber</small></span>`;
+  let vb=$("vitaminsBlock"); if(!vb){vb=document.createElement("div");vb.id="vitaminsBlock";vb.innerHTML='<h3>Vitamins & Minerals</h3><div id="mv"></div>';$("modal")?.querySelector("section")?.appendChild(vb);}
+  $("mv").innerHTML=`<span>${n.vitamins||"—"}</span>`; $("modal")?.classList.add("show");
+}
+$("close")?.addEventListener("click",()=>$("modal").classList.remove("show"));
+$("modal")?.addEventListener("click",e=>{if(e.target.id==="modal")$("modal").classList.remove("show");});
+$("search")?.addEventListener("input",render);
+loadMenu();
